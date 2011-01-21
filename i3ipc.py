@@ -57,10 +57,3 @@ def get_workspaces(ipcfile=I3_IPCFILE):
 
 def get_outputs(ipcfile=I3_IPCFILE):
     return send(I3_IPC_MESSAGE_TYPE_GET_OUTPUTS, ipcfile=ipcfile)
-
-
-if __name__ == '__main__':
-    ipcsock = '/home/nathan/.config/i3/ipc.sock'
-
-    print 'WORKSPACES:\n%s\n' % (get_workspaces(ipcsock),)
-    print 'OUTPUTS:\n%s\n' % (get_outputs(ipcsock),)
