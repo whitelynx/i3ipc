@@ -5,7 +5,7 @@ import socket, json
 
 I3_IPCFILE = '~/i3/ipc.sock'
 I3_IPC_MAGIC = 'i3-ipc'
-I3_CHUNK_SIZE = 64
+I3_CHUNK_SIZE = 1024
 
 I3_IPC_MESSAGE_TYPE_COMMAND = 0
 I3_IPC_MESSAGE_TYPE_GET_WORKSPACES = 1
@@ -27,7 +27,7 @@ def pack_message(*args):
     return ''.join(package)
 
 def unpack_response(data):
-    return {
+    response =  {
         'magic': data[:6],
         'total_length': len(data),
         'length': unpack('l', data[6:10])[0],
@@ -35,6 +35,9 @@ def unpack_response(data):
         'payload_length': len(data[14:]),
         'payload': json.loads(data[14:]),
     }
+    if response['magic'] != I3_IPC_MAGIC:
+        raise ValueError()
+    return response
 
 def send(mtype, payload='', ipcfile=I3_IPCFILE):
     s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
