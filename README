@@ -1,0 +1,26 @@
+i3ipc - An Library for i3 IPC Communication
+
+
+Goals:
+* Send commands by IPC to i3 window manager.
+* Recieve parsed JSON responses from sent commands.
+* Subscribe to i3 event model using a evented model.
+
+
+Current Status:
+The library is currently able to send commands and return JSON response code 
+for a given active socket file.
+
+
+Comments:
+I'm not a socket programmer and mostly spend my time with basic Python when
+BASH scripting becomes more arcane and Python is less verbose. Because of this
+the functions in this module may very well be the last way you'd actually want
+to communicate using IPC. Please, let me know if you have any ideas.
+
+For now this library fills the gap for me. There is no current Python library
+that I am aware of for communicating with the i3WM.
+
+
+Author:
+Nathan Middleton - nathan/dot/middleton\at\gmail/dot/com
