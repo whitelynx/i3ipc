@@ -74,7 +74,7 @@ class I3Socket:
         """ Query workspaces by index (zero-based) or name (unicode string). """
         t = type(workspace)
         if t == int:
-            return response['payload'][workspace - 1]
+            return response['payload'][workspace]
         elif t == str:
             for ws in response['payload']:
                 if ws['name'] == ws:
