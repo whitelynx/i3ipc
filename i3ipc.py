@@ -56,7 +56,7 @@ def send(mtype, payload='', ipcfile=I3_IPCFILE):
     data = s.recv(I3_CHUNK_SIZE)
     while len(data) < expected_length(data):
         data = '%s%s' % (data, s.recv(I3_CHUNK_SIZE),)
-    #s.close()
+    s.close()
     return unpack_response(data)
 
 def send_command(payload, ipcfile=I3_IPCFILE):
