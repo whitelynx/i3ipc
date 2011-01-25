@@ -1,0 +1,18 @@
+
+[indentation]
+indent_width=4
+indent_type=0
+indent_hard_tab_width=8
+detect_indent=false
+indent_mode=2
+
+[project]
+name=i3ipc
+base_path=/home/nathan/Projects/python_libraries/i3ipc
+
+[long line marker]
+long_line_behaviour=1
+long_line_column=80
+
+[files]
+current_page=-1

@@ -7,6 +7,6 @@ setup(name='i3ipc',
     description='i3 IPC communication library.',
     author='Nathan Middleton',
     author_email='nathan.middleton@gmail.com',
-    url='',
-    py_modules=['i3ipc',],
+    url='https://github.com/thepub/i3ipc',
+    packages=['i3ipc',],
     )

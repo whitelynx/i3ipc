@@ -3,6 +3,7 @@ from os.path import expanduser, expandvars, normpath
 from struct import pack, unpack
 import json
 
+from exceptions import *
 
 I3_IPCFILE = '~/i3/ipc.sock'            # default location of i3 ipc socket file
 I3_IPC_MAGIC = 'i3-ipc'                 # token used to identify i3 messages
@@ -42,10 +43,10 @@ class I3Socket:
             'payload': json.loads(data[14:]),
         }
         if response['magic'] != I3_IPC_MAGIC:
-            raise KeyError("I3_IPC_MAGIC not present.")
+            raise MagicKeyError()
         self.__last_response = response
         return response
-        
+
     def close(self):
         """ Close the socket. """
         self.__socket.close()
@@ -60,7 +61,7 @@ class I3Socket:
         while len(data) < expected_length(data):
             data = '%s%s' % (data, self.__socket.recv(I3_CHUNK_SIZE),)
         return self.__unpack_response(data)
-    
+
     def send_command(self, payload):
         """ Send a command to window manager. """
         return self.send(I3_IPC_MESSAGE_TYPE_COMMAND, payload)
@@ -70,15 +71,20 @@ class I3Socket:
         response = self.send(I3_IPC_MESSAGE_TYPE_GET_WORKSPACES)
         return response if raw else response['payload']
 
-    def get_workspace(self, workspace):
+    def get_workspace(self, index):
         """ Query workspaces by index (zero-based) or name (unicode string). """
-        t = type(workspace)
-        if t == int:
-            return response['payload'][workspace]
-        elif t == str:
-            for ws in response['payload']:
-                if ws['name'] == ws:
-                    ws
+        workspaces = self.send(I3_IPC_MESSAGE_TYPE_GET_WORKSPACES)['payload']
+        index_type = type(index)
+        if index_type == int:
+            if index < len(workspaces):
+                return response['payload'][workspace]
+            else:
+                raise NotFoundError("Index %s not in range of %s." % (index, len(workspaces),))
+        elif index_type == str:
+            for workspace in workspaces:
+                if workspace['name'].endswith(": %s" % (index,)):
+                    return workspace
+            raise NotFoundError("Workspace '%s' does not exist." % (index,))
 
     def get_outputs(self, raw=False):
         """ Returns a list of of available outpus. """
