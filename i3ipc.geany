@@ -9,10 +9,21 @@ indent_mode=2
 [project]
 name=i3ipc
 base_path=/home/nathan/Projects/python_libraries/i3ipc
+description=
 
 [long line marker]
 long_line_behaviour=1
 long_line_column=80
 
 [files]
-current_page=-1
+current_page=2
+FILE_NAME_0=0;Python;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/setup.py;0
+FILE_NAME_1=333;None;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/README;0
+FILE_NAME_2=1935;Python;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/i3ipc/__init__.py;0
+FILE_NAME_3=0;Python;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/i3ipc/exceptions.py;0
+FILE_NAME_4=3894;Python;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/i3ipc/threaded.py;0
+
+[build-menu]
+EX_00_LB=_Execute
+EX_00_CM=python -i "%f"
+EX_00_WD=

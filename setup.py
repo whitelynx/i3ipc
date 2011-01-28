@@ -8,5 +8,5 @@ setup(name='i3ipc',
     author='Nathan Middleton',
     author_email='nathan.middleton@gmail.com',
     url='https://github.com/thepub/i3ipc',
-    packages=['i3ipc',],
+    py_modules=['i3ipc',],
     )
