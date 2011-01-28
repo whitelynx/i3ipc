@@ -1,5 +1,5 @@
 from os.path import expanduser, expandvars, normpath
-import json, threading, struct, socket, time
+import json, threading, struct, socket
 
 I3_IPCFILE = '~/i3/ipc.sock'            # default location of i3 ipc socket file
 I3_IPC_MAGIC = 'i3-ipc'                 # token used to identify i3 messages
@@ -18,6 +18,7 @@ I3_IPC_REPLY_TYPE_OUTPUTS = 3
 
 
 class WrongMagicKey(Exception):
+    """ Exception called when the magic key does not exist. """
     pass
 
 
@@ -31,8 +32,6 @@ def pack(message_type, payload, ipc_magic=I3_IPC_MAGIC):
 
 def unpack(data):
     """ Unpack responses from the i3 window manager. """
-    # works on x86_64, cannot vouch for anything else at this time.
-    # should probably do proper length calculations for the long integers.
     response =  {
         'magic': data[:6],
         'total_length': len(data),
@@ -46,10 +45,7 @@ def unpack(data):
     return response
 
 def subscribe(callback, event_list, ipcfile=I3_IPCFILE):
-    """ Create and return an event listening thread. Each time the window
-    manager returns event data it is passed as a single argument to callback.
-    To stop listening to events, call the unsubscribe method on the returned
-    event thread. No arguments should be supplied. """
+    """ Create and return an event listening thread. """
     return I3EventListener(callback, event_list, ipcfile=ipcfile)
 
 
@@ -63,14 +59,7 @@ class I3Socket:
         self.__socket.connect(expanduser(expandvars(normpath(self.__ipcfile))))
 
     def send(self, mtype, payload=''):
-        """ Open and sends a message to the window manager, returing a json
-        parsed response.
-
-        By setting the keepopen option to False will close the socket after send.
-
-        By default a socket is using I3_IPCFILE. If an ipcfile argument is supplied
-        the module will store the new position for future reference. So ipcfile must
-        only be set once."""
+        """ Format a payload based on mtype (message type) to the window manager. """
         message = pack(mtype, payload)
         self.__socket.sendall(message)
         data = self.recieve()
@@ -128,15 +117,6 @@ class I3EventListener(threading.Thread):
                 self.__callback(response)
 
     def unsubscribe(self):
+        """ Prevent listening to any further events for this subscription. """
         self.__socket.close()
         self.__subscribed = False
-
-
-
-if __name__ == '__main__':
-    def printit(data):
-        print 'response: %s' % (data,)
-
-    ipcfile = '~/.config/i3/ipc.sock'
-    i3s = I3Socket(ipcfile)
-    i3e = subscribe(printit, ['workspace'], ipcfile=ipcfile)
