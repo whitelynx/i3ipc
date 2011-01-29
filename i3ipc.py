@@ -63,7 +63,7 @@ def subscribe(callback, event_list, ipcfile=I3_IPCFILE):
 
 
 
-class I3Socket:
+class I3Socket(object):
     def __init__(self, ipcfile=I3_IPCFILE, blocking=True, chunk_size=I3_CHUNK_SIZE):
         self.__chunk_size = chunk_size
         self.__ipcfile = ipcfile
