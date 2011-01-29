@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-import i3ipc, time
 from optparse import OptionParser
+from i3ipc import I3_IPCFILE, I3Socket, I3EventListener
+from time import sleep
 
 parser = OptionParser()
-parser.add_option("-i", "--socket", dest="ipcfile", help="Set IPC socket location. [default is %s" % (i3ipc.I3_IPCFILE,))
+parser.add_option("-i", "--socket", dest="ipcfile", help="Set IPC socket location. [default: %s]" % (I3_IPCFILE,))
 parser.add_option("-s", "--send", dest="command", help="Send command to window manager.")
 parser.add_option("-S", "--subscribe", dest="subscription", help="Print specified window manager events to STDOUT.")
 parser.add_option("-W", "--get-workspace", dest="workspace", help="Get a named or indexed workspace information.")
@@ -13,8 +14,13 @@ parser.add_option("-o", "--get-outputs", dest="outputs", action="store_true", he
 (options, args) = parser.parse_args()
 
 if __name__ == '__main__':
-    ipcfile = options.ipcfile if options.ipcfile else i3ipc.I3_IPCFILE
-    socket = i3ipc.I3Socket(ipcfile)
+    try:
+        ipcfile = options.ipcfile if options.ipcfile else I3_IPCFILE
+        socket = I3Socket(ipcfile)
+    except:
+        print("Socket file does not exist, or no options provided.  Use "\
+              "'--help' for more information.")
+        exit(1)
 
     if options.command:
         print(socket.send_command(options.command))
@@ -35,8 +41,8 @@ if __name__ == '__main__':
             print(data)
 
         try:
-            events = i3ipc.I3EventListener(listener, [options.subscription], ipcfile)
+            events = I3EventListener(listener, [options.subscription], ipcfile)
             while events.is_alive():
-                time.sleep(1)
+                sleep(1)
         except KeyboardInterrupt:
             events.unsubscribe()

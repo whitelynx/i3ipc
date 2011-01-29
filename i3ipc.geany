@@ -16,10 +16,11 @@ long_line_behaviour=1
 long_line_column=80
 
 [files]
-current_page=2
+current_page=3
 FILE_NAME_0=0;None;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/README;0
 FILE_NAME_1=0;Python;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/setup.py;0
 FILE_NAME_2=3750;Python;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/i3ipc.py;0
+FILE_NAME_3=1030;Python;0;16;0;1;1;/home/nathan/Projects/python_libraries/i3ipc/i3ipc;0
 
 [build-menu]
 EX_00_LB=_Execute
