@@ -23,83 +23,54 @@ I3_IPC_MESSAGE_TYPE_COMMAND = 0
 I3_IPC_MESSAGE_TYPE_GET_WORKSPACES = 1
 I3_IPC_MESSAGE_TYPE_SUBSCRIBE = 2
 I3_IPC_MESSAGE_TYPE_GET_OUTPUTS = 3
-I3_IPC_MESSAGES = (I3_IPC_MESSAGE_TYPE_COMMAND, I3_IPC_MESSAGE_TYPE_GET_WORKSPACES, I3_IPC_MESSAGE_TYPE_SUBSCRIBE, I3_IPC_MESSAGE_TYPE_GET_OUTPUTS,)
 
 I3_IPC_REPLY_TYPE_COMMAND = 0
 I3_IPC_REPLY_TYPE_WORKSPACES = 1
 I3_IPC_REPLY_TYPE_SUBSCRIBE = 2
 I3_IPC_REPLY_TYPE_OUTPUTS = 3
-I3_IPC_REPLIES = (I3_IPC_REPLY_TYPE_COMMAND, I3_IPC_REPLY_TYPE_WORKSPACES, I3_IPC_REPLY_TYPE_SUBSCRIBE, I3_IPC_REPLY_TYPE_OUTPUTS,)
+
+I3_IPC_EVENT_MASK = 1 << 31
+I3_IPC_EVENT_WORKSPACE = I3_IPC_EVENT_MASK | 0
+I3_IPC_EVENT_OUTPUT = I3_IPC_EVENT_MASK | 1
+
+I3_IPC_MESSAGES = (I3_IPC_MESSAGE_TYPE_COMMAND,
+                   I3_IPC_MESSAGE_TYPE_GET_WORKSPACES,
+                   I3_IPC_MESSAGE_TYPE_SUBSCRIBE,
+                   I3_IPC_MESSAGE_TYPE_GET_OUTPUTS,)
+I3_IPC_REPLIES = (I3_IPC_EVENT_WORKSPACE,
+                  I3_IPC_EVENT_OUTPUT,
+                  I3_IPC_REPLY_TYPE_COMMAND,
+                  I3_IPC_REPLY_TYPE_WORKSPACES,
+                  I3_IPC_REPLY_TYPE_SUBSCRIBE,
+                  I3_IPC_REPLY_TYPE_OUTPUTS,)
 
 
 class MagicKeyError(Exception): pass
 class TypeError(Exception): pass
-
-
-def pack(message_type, payload, ipc_magic=I3_IPC_MAGIC):
-    """ Pack a message to send over the IPC pipe. """
-    return '%s%s%s%s' % (ipc_magic,
-                         struct.pack('l', len(payload)),
-                         struct.pack('l', message_type),
-                         payload)
-
-def unpack(data):
-    """ Unpack responses from the i3 window manager. """
-    fmt_header = '<{}sll'.format(len(I3_IPC_MAGIC))
-    fmt_header_size = struct.calcsize(fmt_header)
-    fmt_payload_size = len(data) - fmt_header_size
-    fmt_message = '{}{}s'.format(fmt_header, fmt_payload_size)
-    msg_magic, msg_length, msg_type, msg_payload = struct.unpack(fmt_message, data)
-
-    response =  {
-        'magic': msg_magic,
-        'length': msg_length,
-        'type': msg_type,
-        'payload': json.loads(msg_payload),
-    }
-
-    print "magic: {}\n"\
-          "length: {}\n"\
-          "type: {}\n"\
-          "response[type]: {}\n"\
-          "data:\n{}\n{}\n{}\n"\
-          .format(data[:6],
-                  struct.unpack('l', data[6:10])[0],
-                  struct.unpack('l', data[10:14])[0],
-                  response['type'],
-                  '-'*40,
-                  data,
-                  '-'*40)
-
-    #if response['magic'] != I3_IPC_MAGIC:
-        #raise MagicKeyError('Invalid key ({}) provided.'.format(response['magic']))
-    #elif response['type'] not in I3_IPC_REPLIES:
-        #raise TypeError('Invalid reply type ({}) provided.'.format(response['type']))
-
-    return response
-
-def subscribe(callback, event_list, ipcfile=I3_IPCFILE):
-    """ Create and return an event listening thread. """
-    return I3EventListener(callback, event_list, ipcfile=ipcfile)
-
-
+class BufferError(Exception): pass
 
 class I3Socket(object):
-    def __init__(self, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT, chunk_size=I3_CHUNK_SIZE):
+    def __init__(self, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT, chunk_size=I3_CHUNK_SIZE, raw=False):
         self.__chunk_size = chunk_size
         self.__ipcfile = ipcfile
         self.__socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        #self.__socket.settimeout(timeout)
+        self.__socket.settimeout(timeout)
         self.__socket.connect(expanduser(expandvars(normpath(self.__ipcfile))))
+        self.__raw = raw
+        self.__buffer = ''
 
-    def send(self, mtype, payload='', raw=False):
+    def send(self, mtype, payload=''):
         """ Format a payload based on mtype (message type) to the window manager. """
         if mtype not in I3_IPC_MESSAGES:
             raise TypeError('Mesage type ({}) does not exit.'.format(mtype))
-        message = pack(mtype, payload)
+        message = self.pack(mtype, payload)
         self.__socket.sendall(message)
         data = self.recieve()
-        return data if raw else unpack(data)['payload']
+        if self.__raw:
+            return data
+        else:
+            response = self.unpack(data)['payload']
+            return response
 
     def send_command(self, payload):
         """ Send a command to window manager. """
@@ -127,9 +98,47 @@ class I3Socket(object):
                 expected_length = int(struct.unpack('l', data[6:10])[0]) + 14
                 while len(data) < expected_length:
                     data = '%s%s' % (data, self.__socket.recv(self.__chunk_size),)
-                return data
+                return '{}{}'.format(self.__buffer, data) if len(self.__buffer) > 0 else data
             except socket.timeout:
-                pass
+                return self.__buffer
+
+    def pack(self, message_type, payload, ipc_magic=I3_IPC_MAGIC):
+        """ Pack a message to send over the IPC pipe. """
+        return '%s%s%s%s' % (ipc_magic,
+                             struct.pack('l', len(payload)),
+                             struct.pack('l', message_type),
+                             payload)
+
+    def unpack(self, data):
+        """ Unpack responses from the i3 window manager. """
+        fmt_header = '<{}sII'.format(len(I3_IPC_MAGIC))
+        fmt_header_size = struct.calcsize(fmt_header)
+        msg_magic, msg_length, msg_type = struct.unpack(fmt_header, data[:fmt_header_size])
+        fmt_payload = '<{}s'.format(msg_length)
+
+        data_size = len(data)
+        msg_size = fmt_header_size + msg_length
+        if data_size < msg_size:
+            self.__buffer = data
+            raise BufferError("Incomplete message in buffer.")
+        elif data_size == msg_size or data_size > msg_size:
+            msg_payload = data[fmt_header_size:msg_size]
+            self.__buffer = data[msg_size:]
+        else:
+            raise Exception('Something strange is going on with the data length.')
+
+        response =  {
+            'magic': msg_magic,
+            'length': msg_length,
+            'type': msg_type,
+            'payload': json.loads(msg_payload),
+        }
+
+        if response['magic'] != I3_IPC_MAGIC:
+            raise MagicKeyError('Invalid key ({}) provided.'.format(response['magic']))
+        if response['type'] not in I3_IPC_REPLIES:
+            raise TypeError('Invalid reply type ({}) provided.'.format(response['type']))
+        return response
 
     def close(self):
         """ close this socket if open. """
@@ -147,7 +156,7 @@ class I3EventListener(threading.Thread):
     def __init__(self, callback, event_list, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT, raw=False):
         threading.Thread.__init__(self)
         self.__callback = callback
-        self.__socket = I3Socket(ipcfile, timeout=timeout)
+        self.__socket = I3Socket(ipcfile, timeout=timeout, raw=raw)
         self.__socket.subscribe(event_list)
         self.__subscribed = True
         self.__raw = raw
@@ -156,26 +165,16 @@ class I3EventListener(threading.Thread):
     def run(self):
         while self.__subscribed:
             data = self.__socket.recieve()
-            response = data if self.__raw else unpack(data)['payload']
-            self.__callback(self, response)
+            while data and self.__subscribed:
+                response = data if self.__raw else self.__socket.unpack(data)['payload']
+                self.__callback(self, response['payload'])
+                data = self.__socket.recieve()
 
     def unsubscribe(self):
         """ Prevent listening to any further events for this subscription. """
         self.__socket.close()
         self.__subscribed = False
 
-
-if __name__ == '__main__':
-    ipcfile = '~/.config/i3/ipc.sock'
-    sock = I3Socket(ipcfile)
-
-    def listener(caller, data):
-        #print(data)
-        pass
-    evt = subscribe(listener, ['workspace'], ipcfile)
-    try:
-        while evt.is_alive():
-            pass
-    except KeyboardInterrupt:
-        evt.unsubscribe()
-        exit(0)
+def subscribe(callback, event_list, ipcfile=I3_IPCFILE):
+    """ Create and return an event listening thread. """
+    return I3EventListener(callback, event_list, ipcfile=ipcfile)

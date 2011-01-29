@@ -11,12 +11,13 @@ parser.add_option("-S", "--subscribe", dest="subscription", help="Print specifie
 parser.add_option("-W", "--get-workspace", dest="workspace", help="Get a named or indexed workspace information.")
 parser.add_option("-w", "--get-workspaces", dest="workspaces", action="store_true", help="Get workspace information.")
 parser.add_option("-o", "--get-outputs", dest="outputs", action="store_true", help="Get available RandR outputs.")
+parser.add_option("-r", "--raw", dest="raw", action="store_true", help="All output returns raw data.")
 (options, args) = parser.parse_args()
 
 if __name__ == '__main__':
     try:
         ipcfile = options.ipcfile if options.ipcfile else I3_IPCFILE
-        socket = I3Socket(ipcfile)
+        socket = I3Socket(ipcfile=ipcfile, raw=options.raw)
     except:
         print("Socket file does not exist, or no options provided.  Use "\
               "'--help' for more information.")
@@ -37,11 +38,11 @@ if __name__ == '__main__':
         print(socket.get_outputs())
 
     if options.subscription:
-        def listener(data):
+        def listener(caller, data):
             print(data)
 
+        events = I3EventListener(listener, [options.subscription], ipcfile, raw=options.raw)
         try:
-            events = I3EventListener(listener, [options.subscription], ipcfile)
             while events.is_alive():
                 sleep(1)
         except KeyboardInterrupt:
