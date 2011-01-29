@@ -114,7 +114,7 @@ class I3Socket(object):
         fmt_header = '<{}sII'.format(len(I3_IPC_MAGIC))
         fmt_header_size = struct.calcsize(fmt_header)
         msg_magic, msg_length, msg_type = struct.unpack(fmt_header, data[:fmt_header_size])
-        fmt_payload = '<{}s'.format(msg_length)
+        #fmt_payload = '<{}s'.format(msg_length)
 
         data_size = len(data)
         msg_size = fmt_header_size + msg_length
@@ -167,7 +167,7 @@ class I3EventListener(threading.Thread):
             data = self.__socket.recieve()
             while data and self.__subscribed:
                 response = data if self.__raw else self.__socket.unpack(data)['payload']
-                self.__callback(self, response['payload'])
+                self.__callback(self, response)
                 data = self.__socket.recieve()
 
     def unsubscribe(self):
