@@ -9,4 +9,5 @@ setup(name='i3ipc',
     author_email='nathan.middleton@gmail.com',
     url='https://github.com/thepub/i3ipc',
     py_modules=['i3ipc',],
+    scripts=['i3ipc',],
     )

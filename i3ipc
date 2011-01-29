@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+
+import i3ipc, time
+from optparse import OptionParser
+
+parser = OptionParser()
+parser.add_option("-i", "--socket", dest="ipcfile", help="Set IPC socket location. [default is %s" % (i3ipc.I3_IPCFILE,))
+parser.add_option("-s", "--send", dest="command", help="Send command to window manager.")
+parser.add_option("-S", "--subscribe", dest="subscription", help="Print specified window manager events to STDOUT.")
+parser.add_option("-W", "--get-workspace", dest="workspace", help="Get a named or indexed workspace information.")
+parser.add_option("-w", "--get-workspaces", dest="workspaces", action="store_true", help="Get workspace information.")
+parser.add_option("-o", "--get-outputs", dest="outputs", action="store_true", help="Get available RandR outputs.")
+(options, args) = parser.parse_args()
+
+if __name__ == '__main__':
+    ipcfile = options.ipcfile if options.ipcfile else i3ipc.I3_IPCFILE
+    socket = i3ipc.I3Socket(ipcfile)
+
+    if options.command:
+        print(socket.send_command(options.command))
+
+    if options.workspace:
+        workspaces = socket.get_workspaces()
+        for workspace in workspaces:
+            if workspace['name'].endswith(': ' + options.workspace) or\
+            workspace['name'].startswith(options.workspace):
+                print(workspace)
+    elif options.workspaces:
+        print(socket.get_workspaces())
+    elif options.outputs:
+        print(socket.get_outputs())
+
+    if options.subscription:
+        def listener(data):
+            print(data)
+
+        try:
+            events = i3ipc.I3EventListener(listener, [options.subscription], ipcfile)
+            while events.is_alive():
+                time.sleep(1)
+        except KeyboardInterrupt:
+            events.unsubscribe()
