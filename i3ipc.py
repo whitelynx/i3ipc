@@ -14,7 +14,7 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 from os.path import expanduser, expandvars, normpath
 import json, threading, struct, socket
 
-I3_IPCFILE = '~/i3/ipc.sock'            # default location of i3 ipc socket file
+I3_IPCFILE = '~/.config/i3/ipc.sock'            # default location of i3 ipc socket file
 I3_IPC_MAGIC = 'i3-ipc'                 # token used to identify i3 messages
 I3_CHUNK_SIZE =  1024                   # default receive size
 I3_SOCKET_TIMEOUT = 0.5
@@ -37,27 +37,35 @@ I3_IPC_MESSAGES = (I3_IPC_MESSAGE_TYPE_COMMAND,
                    I3_IPC_MESSAGE_TYPE_GET_WORKSPACES,
                    I3_IPC_MESSAGE_TYPE_SUBSCRIBE,
                    I3_IPC_MESSAGE_TYPE_GET_OUTPUTS,)
-I3_IPC_REPLIES = (I3_IPC_EVENT_WORKSPACE,
-                  I3_IPC_EVENT_OUTPUT,
-                  I3_IPC_REPLY_TYPE_COMMAND,
+I3_IPC_REPLIES = (I3_IPC_REPLY_TYPE_COMMAND,
                   I3_IPC_REPLY_TYPE_WORKSPACES,
                   I3_IPC_REPLY_TYPE_SUBSCRIBE,
                   I3_IPC_REPLY_TYPE_OUTPUTS,)
+I3_IPC_EVENTS = (I3_IPC_EVENT_WORKSPACE,
+                 I3_IPC_EVENT_OUTPUT,)
+I3_IPC_ALL_REPLIES = (I3_IPC_REPLY_TYPE_COMMAND,
+                      I3_IPC_REPLY_TYPE_WORKSPACES,
+                      I3_IPC_REPLY_TYPE_SUBSCRIBE,
+                      I3_IPC_REPLY_TYPE_OUTPUTS,
+                      I3_IPC_EVENT_WORKSPACE,
+                      I3_IPC_EVENT_OUTPUT,)
 
 
 class MagicKeyError(Exception): pass
+class EventError(Exception): pass
 class TypeError(Exception): pass
 class BufferError(Exception): pass
 
+
 class I3Socket(object):
-    def __init__(self, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT, chunk_size=I3_CHUNK_SIZE, raw=False):
+    def __init__(self, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT, chunk_size=I3_CHUNK_SIZE):
         self.__chunk_size = chunk_size
         self.__ipcfile = ipcfile
         self.__socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__socket.settimeout(timeout)
         self.__socket.connect(expanduser(expandvars(normpath(self.__ipcfile))))
-        self.__raw = raw
         self.__buffer = ''
+        self.__event = False
 
     def send(self, mtype, payload=''):
         """ Format a payload based on mtype (message type) to the window manager. """
@@ -66,11 +74,7 @@ class I3Socket(object):
         message = self.pack(mtype, payload)
         self.__socket.sendall(message)
         data = self.recieve()
-        if self.__raw:
-            return data
-        else:
-            response = self.unpack(data)['payload']
-            return response
+        return self.unpack(data)
 
     def send_command(self, payload):
         """ Send a command to window manager. """
@@ -84,9 +88,16 @@ class I3Socket(object):
         """ Returns a list of of available outpus. """
         return self.send(I3_IPC_MESSAGE_TYPE_GET_OUTPUTS)
 
-    def subscribe(self, subscriptions):
+    def subscribe(self, event_type, event_other):
         """ Subscribe to an event over this socket. Used by I3EventListener. """
-        payload = json.dumps(subscriptions)
+        if event_type in I3_IPC_EVENTS:
+            self.__event = True
+            event = [ 'output' ] + event_other if event_type == I3_IPC_EVENT_OUTPUT\
+                    else [ 'workspace' ] + event_other if event_type == I3_IPC_EVENT_WORKSPACE\
+                    else []
+            payload = json.dumps(event)
+        else:
+            raise EventError("Invalid event type.")
         return self.send(I3_IPC_MESSAGE_TYPE_SUBSCRIBE, payload)
 
     def recieve(self):
@@ -114,7 +125,6 @@ class I3Socket(object):
         fmt_header = '<{}sII'.format(len(I3_IPC_MAGIC))
         fmt_header_size = struct.calcsize(fmt_header)
         msg_magic, msg_length, msg_type = struct.unpack(fmt_header, data[:fmt_header_size])
-        #fmt_payload = '<{}s'.format(msg_length)
 
         data_size = len(data)
         msg_size = fmt_header_size + msg_length
@@ -126,18 +136,22 @@ class I3Socket(object):
             self.__buffer = data[msg_size:]
         else:
             raise Exception('Something strange is going on with the data length.')
+        event_payload = self.get_outputs()['payload'] if msg_type == I3_IPC_EVENT_OUTPUT\
+                        else self.get_workspaces()['payload'] if msg_type == I3_IPC_EVENT_WORKSPACE\
+                        else None
 
         response =  {
             'magic': msg_magic,
             'length': msg_length,
             'type': msg_type,
             'payload': json.loads(msg_payload),
+            'event_payload': event_payload,
         }
 
         if response['magic'] != I3_IPC_MAGIC:
-            raise MagicKeyError('Invalid key ({}) provided.'.format(response['magic']))
-        if response['type'] not in I3_IPC_REPLIES:
-            raise TypeError('Invalid reply type ({}) provided.'.format(response['type']))
+            raise MagicKeyError('Invalid key ({}).'.format(response['magic']))
+        if response['type'] not in I3_IPC_ALL_REPLIES:
+            raise TypeError('Invalid reply type. ({})'.format(response['type']))
         return response
 
     def close(self):
@@ -153,28 +167,31 @@ class I3EventListener(threading.Thread):
             argument is a copy of the thread.
 
         unsubscribe(): stop listening to this event. """
-    def __init__(self, callback, event_list, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT, raw=False):
+    def __init__(self, callback, event_type, event_other=[], ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT):
         threading.Thread.__init__(self)
         self.__callback = callback
-        self.__socket = I3Socket(ipcfile, timeout=timeout, raw=raw)
-        self.__socket.subscribe(event_list)
+        self.__socket = I3Socket(ipcfile, timeout)
+        self.__socket.subscribe(event_type, event_other)
         self.__subscribed = True
-        self.__raw = raw
         self.start()
 
     def run(self):
         while self.__subscribed:
             data = self.__socket.recieve()
             while data and self.__subscribed:
-                response = data if self.__raw else self.__socket.unpack(data)['payload']
+                response = self.__socket.unpack(data)
                 self.__callback(self, response)
                 data = self.__socket.recieve()
+        self.__socket.close()
+
+    def close(self):
+        self.__subscribed = False
 
     def unsubscribe(self):
         """ Prevent listening to any further events for this subscription. """
         self.__socket.close()
         self.__subscribed = False
 
-def subscribe(callback, event_list, ipcfile=I3_IPCFILE):
+def subscribe(callback, event_id, event_other, ipcfile=I3_IPCFILE):
     """ Create and return an event listening thread. """
-    return I3EventListener(callback, event_list, ipcfile=ipcfile)
+    return I3EventListener(callback, event_id, event_other, ipcfile)

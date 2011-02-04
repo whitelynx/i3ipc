@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 from optparse import OptionParser
-from i3ipc import I3_IPCFILE, I3Socket, I3EventListener
+from i3ipc import *
+import i3ipc
 from time import sleep
+from os import environ
 
 parser = OptionParser()
 parser.add_option("-i", "--socket", dest="ipcfile", help="Set IPC socket location. [default: %s]" % (I3_IPCFILE,))
@@ -11,39 +13,46 @@ parser.add_option("-S", "--subscribe", dest="subscription", help="Print specifie
 parser.add_option("-W", "--get-workspace", dest="workspace", help="Get a named or indexed workspace information.")
 parser.add_option("-w", "--get-workspaces", dest="workspaces", action="store_true", help="Get workspace information.")
 parser.add_option("-o", "--get-outputs", dest="outputs", action="store_true", help="Get available RandR outputs.")
-parser.add_option("-r", "--raw", dest="raw", action="store_true", help="All output returns raw data.")
 (options, args) = parser.parse_args()
 
 if __name__ == '__main__':
-    try:
-        ipcfile = options.ipcfile if options.ipcfile else I3_IPCFILE
-        socket = I3Socket(ipcfile=ipcfile, raw=options.raw)
-    except:
-        print("Socket file does not exist, or no options provided.  Use "\
-              "'--help' for more information.")
-        exit(1)
-
-    if options.command:
-        print(socket.send_command(options.command))
-
-    if options.workspace:
-        workspaces = socket.get_workspaces()
-        for workspace in workspaces:
-            if workspace['name'].endswith(': ' + options.workspace) or\
-            workspace['name'].startswith(options.workspace):
-                print(workspace)
-    elif options.workspaces:
-        print(socket.get_workspaces())
-    elif options.outputs:
-        print(socket.get_outputs())
+    ipcfile = options.ipcfile if options.ipcfile\
+              else environ['I3PATH'] if 'I3PATH' in environ\
+              else I3_IPCFILE
 
     if options.subscription:
         def listener(caller, data):
             print(data)
 
-        events = I3EventListener(listener, [options.subscription], ipcfile, raw=options.raw)
+        if ',' in options.subscription:
+            subscriptions = options.subscription.split(',')
+            event_type = getattr(i3ipc, subscriptions[0])
+            event_other = subscriptions[1:] if len(subscriptions) > 1 else []
+        else:
+            event_type = getattr(i3ipc, options.subscription)
+            event_other = []
+
+        print("type: {}, others: {}".format(event_type, event_other))
+        event = I3EventListener(listener, event_type, event_other, ipcfile)
         try:
-            while events.is_alive():
+            while event.is_alive():
                 sleep(1)
         except KeyboardInterrupt:
-            events.unsubscribe()
+            event.unsubscribe()
+
+    else:
+        socket = I3Socket(ipcfile)
+
+        if options.command:
+            print(socket.send_command(options.command)['payload'])
+
+        if options.workspace:
+            workspaces = socket.get_workspaces()['payload']
+            for workspace in workspaces:
+                if workspace['name'].endswith(': ' + options.workspace) or\
+                workspace['name'].startswith(options.workspace):
+                    print(workspace)
+        elif options.workspaces:
+            print(socket.get_workspaces()['payload'])
+        elif options.outputs:
+            print(socket.get_outputs()['payload'])
