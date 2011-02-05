@@ -16,9 +16,7 @@ parser.add_option("-o", "--get-outputs", dest="outputs", action="store_true", he
 (options, args) = parser.parse_args()
 
 if __name__ == '__main__':
-    ipcfile = options.ipcfile if options.ipcfile\
-              else environ['I3PATH'] if 'I3PATH' in environ\
-              else I3_IPCFILE
+    ipcfile = options.ipcfile if options.ipcfile else I3_IPCFILE
 
     if options.subscription:
         def listener(caller, data):

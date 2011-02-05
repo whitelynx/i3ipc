@@ -13,10 +13,11 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 from os.path import expanduser, expandvars, normpath
 import json, threading, struct, socket
+from os import environ
 
-I3_IPCFILE = '~/.config/i3/ipc.sock'            # default location of i3 ipc socket file
-I3_IPC_MAGIC = 'i3-ipc'                 # token used to identify i3 messages
-I3_CHUNK_SIZE =  1024                   # default receive size
+I3_IPCFILE = environ['I3PATH'] if 'I3PATH' in environ else '~/.config/i3/ipc.sock'
+I3_IPC_MAGIC = 'i3-ipc'
+I3_CHUNK_SIZE =  1024
 I3_SOCKET_TIMEOUT = 0.5
 
 I3_IPC_MESSAGE_TYPE_COMMAND = 0
