@@ -1,21 +1,40 @@
 i3ipc - An Library for i3 IPC Communication
 
 
-Goals:
-* Send commands by IPC to i3 window manager.
-* Recieve parsed JSON responses from sent commands.
-* Subscribe to i3 event model using a evented model.
-
-
 Current Status:
-The library is complete. It can send and receive individual commands and
-subscribe to events with optional filters.
+    * Send commands by IPC to i3 window manager.
+    * Recieve parsed JSON responses from sent commands.
+    * Subscribe to i3 events using an evented model.
+    * Works with i3 window manager up through next branch in git. (not tested
+      with tree)
+
+
+Events:
+    Events are subscribed to by passing a callable method along with a message
+ type to the subscribe module method. From then on any generated events will be
+ passed to the method and handled by that code.
+    Filters can be subscribed along with the original call. A "filter" is
+ simply a text string based on change arguments passed along with the events.
+ According to http://i3.zekjur.net/docs/ipc.html the following events can be
+ filtered with these arguments:
+
+ I3_IPC_EVENT_WORKSPACE Event:
+    focus
+    init
+    empty
+    urgent
+
+ I3_IPC_EVENT_OUTPUT Event:
+    unspecified
+
+ A comma-seperated list of options can be passed in to the i3ipc program;
+ i3ipc -S I3_IPC_EVENT_WORKSPACE,init
 
 
 Comments:
-For now this library fills the gap for me. There is no current Python library
-that I am aware of for communicating with the i3WM. If you find any issues with
-this library please email me patches or submit them on github.
+    Please let me know by email or github submissions if you find any errors or
+ have any suggestions. I am interested in improving this library to meet all
+ kinds of i3 use-cases.
 
 
 Author:

@@ -177,7 +177,7 @@ class I3EventListener(threading.Thread):
             argument is a copy of the thread.
 
         unsubscribe(): stop listening to this event. """
-    def __init__(self, callback, event_type, event_other='', ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT):
+    def __init__(self, callback, event_type, event_other=None, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT):
         threading.Thread.__init__(self)
         self.__event_type = event_type
         self.__event_filter = event_other
