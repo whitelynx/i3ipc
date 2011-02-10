@@ -199,10 +199,11 @@ class I3EventListener(threading.Thread):
             while data and self.__subscribed:
                 response = self.__evsocket.unpack(data)
                 if response and response['type'] in I3_IPC_EVENTS:
-                    response['event_payload'] = self.__elsocket.get_outputs() if self.__event_type == I3_IPC_EVENT_OUTPUT\
-                                                else self.__elsocket.get_workspaces() if self.__event_type == I3_IPC_EVENT_WORKSPACE\
-                                                else None
-                    self.__callback(self, response)
+                    if response['payload']['change'] == self.__event_filter or not self.__event_filter:
+                        response['event_payload'] = self.__elsocket.get_outputs() if self.__event_type == I3_IPC_EVENT_OUTPUT\
+                                                    else self.__elsocket.get_workspaces() if self.__event_type == I3_IPC_EVENT_WORKSPACE\
+                                                    else None
+                        self.__callback(self, response)
                 data = self.__evsocket.recieve()
 
         self.__evsocket.close()
