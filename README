@@ -7,6 +7,11 @@ Current Status:
     * Subscribe to i3 events using an evented model.
     * Works with i3 window manager up through next branch in git. (not tested
       with tree)
+      
+      
+Dependencies (tested, may work with others):
+ * python 2.7.1
+ * pyxdg 0.19 (http://freedesktop.org/wiki/Software/pyxdg)
 
 
 Events:
