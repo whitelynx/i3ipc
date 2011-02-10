@@ -20,14 +20,7 @@ if __name__ == '__main__':
 
     if options.subscription:
         def listener(caller, data):
-            #print(data['payload'])
-            msg = 'TYPE: {}\n'\
-                  'PAYLOAD: {}\n'\
-                  'EVENT_PAYLOAD: {}\n'\
-                  .format(data['type'],
-                          data['payload'],
-                          data['event_payload'])
-            print(msg)
+            print(data['event_payload'])
 
         if ',' in options.subscription:
             subscriptions = options.subscription.split(',')
@@ -49,8 +42,7 @@ if __name__ == '__main__':
 
         if options.command:
             print(socket.send_command(options.command)['payload'])
-
-        if options.workspace:
+        elif options.workspace:
             workspaces = socket.get_workspaces()['payload']
             for workspace in workspaces:
                 if workspace['name'].endswith(': ' + options.workspace) or\
