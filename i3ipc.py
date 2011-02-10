@@ -14,8 +14,11 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 from os.path import expanduser, expandvars, normpath
 import json, threading, struct, socket
 from os import environ
+from xdg.BaseDirectory import xdg_config_dirs
 
-I3_IPCFILE = environ['I3SOCK'] if 'I3SOCK' in environ else '~/.config/i3/ipc.sock'
+I3_IPCFILE = environ['I3SOCK'] if 'I3SOCK' in environ\
+             else '{}/i3/ipc.sock'.format(xdg_config_dirs[0]) if len(xdg_config_dirs) > 0\
+             else '~/.config/i3/ipc.sock'
 I3_IPC_MAGIC = 'i3-ipc'
 I3_CHUNK_SIZE =  1024
 I3_SOCKET_TIMEOUT = 0.5
