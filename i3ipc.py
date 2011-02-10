@@ -119,17 +119,6 @@ class I3Socket(object):
             except socket.timeout:
                 return self.__buffer
 
-    def has_unused_events(self):
-        """ Return length of __unused_events. """
-        return len(self.__unused_events)
-
-    def get_unused_event(self):
-        """ Return topmost unuxed event. """
-        if self.has_unused_events():
-            return self.__unused_events.pop(0)
-        else:
-            return None
-
     def pack(self, message_type, payload, ipc_magic=I3_IPC_MAGIC):
         """ Pack a message to send over the IPC pipe. """
         return '%s%s%s%s' % (ipc_magic,
