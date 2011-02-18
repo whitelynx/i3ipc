@@ -1,0 +1,84 @@
+#!/usr/bin/python
+"""
+i3wsbar - a remake and expansion of the perl-based statsubar provided with i3.
+          Depends on dzen2 being in your system path or a path to the exutable
+          provided by the -d option.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+from i3ipc import *
+import argparse, subprocess
+
+
+class I3Bar(object):
+    def __init__(self, dzen=None, ipcfile=I3_IPCFILE):
+        self.dzen = dzen
+        self.ipcfile = ipcfile
+        self.barfmt = "^p(_LEFT){}^p(_RIGHT) \n"
+        self.btnfmt = "^bg({})^ca(1,i3ipc -s {})[ {} ]^ca()"
+
+        # initial display
+        i3 = I3Socket(ipcfile=self.ipcfile)
+        self.init(i3.get_workspaces()['payload'])
+        i3.close()
+
+        # register events
+        self.i3ev = subscribe(self.listener, I3_IPC_EVENT_WORKSPACE)
+
+    def listener(self, caller, data):
+        self.init(data['event_payload']['payload'])
+
+    def urgent(self):
+        pass
+
+    def init(self, response):
+        self.bar = '^pa(_LEFT)'
+
+        for ws in response:
+            bgcolor = '#333333' if ws['visible'] else ''
+            wsnumber = ws['name'].split(':')[0] if ':' in ws['name'] else ws['name']
+
+            wsbtn = self.btnfmt.format(bgcolor, wsnumber, ws['name'])
+            self.bar = "{}{}".format(self.bar, wsbtn)
+
+        self.dzen.stdin.write(self.barfmt.format(self.bar))
+
+    def change(self):
+        pass
+
+    def loop(self):
+        while True:
+            pass
+        self.close()
+
+    def close(self):
+        self.i3ev.unsubscribe()
+        self.dzen.kill()
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Replacement statusbar for i3 Window Manager.")
+    parser.add_argument('-d', '--dzen', dest='dzen', default='/usr/bin/dzen2', help='dzen2 path.')
+    parser.add_argument('-s', '--socket', dest='ipcfile', help='i3 socket file path.')
+    args = parser.parse_args()
+
+    dzen = subprocess.Popen([args.dzen,'-dock'], stdin=subprocess.PIPE)
+    ipcfile = args.ipcfile if args.ipcfile else I3_IPCFILE
+
+    bar = I3Bar(dzen=dzen, ipcfile=ipcfile)
+    try:
+        bar.loop()
+    except:
+        bar.close()
+        dzen.kill()
