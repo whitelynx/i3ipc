@@ -16,13 +16,12 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from optparse import OptionParser
-from i3ipc import *
-import i3ipc
+from i3ipc import I3Socket, I3EventListener
 from time import sleep
 from os import environ
 
 parser = OptionParser()
-parser.add_option("-i", "--socket", dest="ipcfile", help="Set IPC socket location. [default: %s]" % (I3_IPCFILE,))
+parser.add_option("-i", "--socket", dest="ipcfile", help="Set IPC socket location.")
 parser.add_option("-s", "--send", dest="command", help="Send command to window manager.")
 parser.add_option("-S", "--subscribe", dest="subscription", help="Print specified window manager events to STDOUT.")
 parser.add_option("-W", "--get-workspace", dest="workspace", help="Get a named or indexed workspace information.")
@@ -31,7 +30,7 @@ parser.add_option("-o", "--get-outputs", dest="outputs", action="store_true", he
 (options, args) = parser.parse_args()
 
 if __name__ == '__main__':
-    ipcfile = options.ipcfile if options.ipcfile else I3_IPCFILE
+    ipcfile = options.ipcfile if options.ipcfile else None
 
     if options.subscription:
         def listener(caller, data):

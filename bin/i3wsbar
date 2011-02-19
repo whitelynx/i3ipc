@@ -1,0 +1,36 @@
+#!/usr/bin/python
+"""
+i3wsbar - a remake and expansion of the perl-based statsubar provided with i3.
+          Depends on dzen2 being in your system path or a path to the exutable
+          provided by the -d option.
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free
+Software Foundation, either version 3 of the License, or (at your option) any
+later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY
+WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along
+with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
+import i3ipc
+import argparse, subprocess, signal
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Replacement statusbar for i3 Window Manager.")
+    parser.add_argument('-d', '--dzen', dest='dzen', default='/usr/bin/dzen2', help='dzen2 path.')
+    parser.add_argument('-s', '--socket', dest='ipcfile', help='i3 socket file path.')
+    parser.add_argument('-f', '--font', dest='font', default='', help='font used to render bar.')
+    args = parser.parse_args()
+
+    ipcfile = args.ipcfile if args.ipcfile else None
+
+    bar = i3ipc.I3Bar.I3Bar(dzen=args.dzen, font=args.font, ipcfile=ipcfile)
+    signal.signal(signal.SIGINT, bar.close)
+    signal.signal(signal.SIGTERM, bar.close)
+    bar.loop()

@@ -1,20 +1,8 @@
-"""
-This program is free software: you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free
-Software Foundation, either version 3 of the License, or (at your option) any
-later version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT ANY
-WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A
-PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along
-with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
-from os.path import expanduser, expandvars, normpath
-import json, threading, struct, socket
 from os import environ
 from xdg.BaseDirectory import xdg_config_dirs
+from os.path import expanduser, expandvars, normpath
+import json, threading, struct, socket
+
 
 I3_IPCFILE = environ['I3SOCK'] if 'I3SOCK' in environ\
              else '{}/i3/ipc.sock'.format(xdg_config_dirs[0]) if len(xdg_config_dirs) > 0\
@@ -55,16 +43,15 @@ I3_IPC_ALL_REPLIES = (I3_IPC_REPLY_TYPE_COMMAND,
                       I3_IPC_EVENT_OUTPUT,)
 
 
+
 class MagicKeyError(Exception): pass
-class EventError(Exception): pass
 class TypeError(Exception): pass
 class BufferError(Exception): pass
 
-
 class I3Socket(object):
-    def __init__(self, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT, chunk_size=I3_CHUNK_SIZE):
+    def __init__(self, ipcfile=None, timeout=I3_SOCKET_TIMEOUT, chunk_size=I3_CHUNK_SIZE):
         self.__chunk_size = chunk_size
-        self.__ipcfile = ipcfile
+        self.__ipcfile = ipcfile if ipcfile else I3_IPCFILE
         self.__socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         self.__socket.settimeout(timeout)
         self.__socket.connect(expanduser(expandvars(normpath(self.__ipcfile))))
@@ -159,55 +146,3 @@ class I3Socket(object):
     def close(self):
         """ close this socket if open. """
         self.__socket.close()
-
-
-class I3EventListener(threading.Thread):
-    """ Self-starting thread to listen for a single window manager event.
-
-        callback(thread, data): when data is returned from the socket it is read
-            and returned to the callback method as the second argument. The first
-            argument is a copy of the thread.
-
-        unsubscribe(): stop listening to this event. """
-    def __init__(self, callback, event_type, event_other=None, ipcfile=I3_IPCFILE, timeout=I3_SOCKET_TIMEOUT):
-        threading.Thread.__init__(self)
-        self.__event_type = event_type
-        self.__event_filter = event_other
-        self.__callback = callback
-
-        self.__evsocket = I3Socket(ipcfile, timeout)
-        self.__evsocket.subscribe(event_type, event_other)
-
-        self.__elsocket = I3Socket(ipcfile, timeout)
-
-        self.__subscribed = False
-        self.start()
-
-    def run(self):
-        self.__subscribed = True
-
-        while self.__subscribed:
-            data = self.__evsocket.recieve()
-            while data and self.__subscribed:
-                response = self.__evsocket.unpack(data)
-                if response and response['type'] in I3_IPC_EVENTS:
-                    if response['payload']['change'] == self.__event_filter or not self.__event_filter:
-                        response['event_payload'] = self.__elsocket.get_outputs() if self.__event_type == I3_IPC_EVENT_OUTPUT\
-                                                    else self.__elsocket.get_workspaces() if self.__event_type == I3_IPC_EVENT_WORKSPACE\
-                                                    else None
-                        self.__callback(self, response)
-                data = self.__evsocket.recieve()
-
-        self.__evsocket.close()
-        self.__elsocket.close()
-
-    def unsubscribe(self):
-        """ Prevent listening to any further events for this subscription. """
-        self.__subscribed = False
-
-    def close(self):
-        self.unsubscribe()
-
-def subscribe(callback, event_id, event_other='', ipcfile=I3_IPCFILE):
-    """ Create and return an event listening thread. """
-    return I3EventListener(callback, event_id, event_other, ipcfile)
