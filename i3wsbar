@@ -18,35 +18,34 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from i3ipc import *
-import argparse, subprocess
+import argparse, subprocess, signal
 
 
 class I3Bar(object):
-    def __init__(self, dzen=None, ipcfile=I3_IPCFILE):
-        self.dzen = dzen
+    FMT_BAR = "^p(_LEFT) {}^p(_RIGHT) \n"
+    FMT_BTN = "^bg({})^ca(1,i3ipc -s {})[ {} ]^ca()"
+
+    def __init__(self, dzen=None, font=None, ipcfile=I3_IPCFILE):
+        dzen_args = [args.dzen,'-dock']
+        if font: dzen_args.append('-fn {}'.format(font))
+        self.dzen = subprocess.Popen(dzen_args, stdin=subprocess.PIPE)
         self.ipcfile = ipcfile
-        self.barfmt = "^p(_LEFT){}^p(_RIGHT) \n"
-        self.btnfmt = "^bg({})^ca(1,i3ipc -s {})[ {} ]^ca()"
+        self.barfmt = I3Bar.FMT_BAR
+        self.btnfmt = I3Bar.FMT_BTN
 
         # initial display
         i3 = I3Socket(ipcfile=self.ipcfile)
-        self.init(i3.get_workspaces()['payload'])
+        self.init(self, i3.get_workspaces())
         i3.close()
 
-        # register events
-        self.i3ev = subscribe(self.listener, I3_IPC_EVENT_WORKSPACE)
-
     def listener(self, caller, data):
-        self.init(data['event_payload']['payload'])
+        getattr(self, data['payload']['change'])(caller, data['event_payload'])
 
-    def urgent(self):
-        pass
-
-    def init(self, response):
+    def init(self, caller, data):
         self.bar = '^pa(_LEFT)'
 
-        for ws in response:
-            bgcolor = '#333333' if ws['visible'] else ''
+        for ws in data['payload']:
+            bgcolor = '#AA3333' if ws['urgent'] else '#333333' if ws['visible'] else ''
             wsnumber = ws['name'].split(':')[0] if ':' in ws['name'] else ws['name']
 
             wsbtn = self.btnfmt.format(bgcolor, wsnumber, ws['name'])
@@ -54,15 +53,21 @@ class I3Bar(object):
 
         self.dzen.stdin.write(self.barfmt.format(self.bar))
 
-    def change(self):
+    def focus(self, event, data):
+        self.init(event, data)
+
+    def urgent(self, event, data):
+        self.init(event, data)
+
+    def empty(self, event, data):
         pass
 
     def loop(self):
-        while True:
+        self.i3ev = subscribe(self.listener, I3_IPC_EVENT_WORKSPACE)
+        while self.i3ev.is_alive():
             pass
-        self.close()
 
-    def close(self):
+    def close(self, *args):
         self.i3ev.unsubscribe()
         self.dzen.kill()
 
@@ -70,15 +75,11 @@ class I3Bar(object):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Replacement statusbar for i3 Window Manager.")
     parser.add_argument('-d', '--dzen', dest='dzen', default='/usr/bin/dzen2', help='dzen2 path.')
-    parser.add_argument('-s', '--socket', dest='ipcfile', help='i3 socket file path.')
+    parser.add_argument('-s', '--socket', dest='ipcfile', default=I3_IPCFILE, help='i3 socket file path.')
+    parser.add_argument('-f', '--font', dest='font', default='', help='font used to render bar.')
     args = parser.parse_args()
 
-    dzen = subprocess.Popen([args.dzen,'-dock'], stdin=subprocess.PIPE)
-    ipcfile = args.ipcfile if args.ipcfile else I3_IPCFILE
-
-    bar = I3Bar(dzen=dzen, ipcfile=ipcfile)
-    try:
-        bar.loop()
-    except:
-        bar.close()
-        dzen.kill()
+    bar = I3Bar(dzen=args.dzen, font=args.font, ipcfile=args.ipcfile)
+    signal.signal(signal.SIGINT, bar.close)
+    signal.signal(signal.SIGTERM, bar.close)
+    bar.loop()
