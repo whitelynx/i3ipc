@@ -16,6 +16,7 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
 from optparse import OptionParser
+import i3ipc
 from i3ipc import I3Socket, I3EventListener
 from time import sleep
 from os import environ
