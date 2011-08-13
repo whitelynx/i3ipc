@@ -11,6 +11,8 @@ Current Status:
       
 Dependencies (tested, may work with others):
  * python 2.7.1
+
+Optional Dependencies:
  * pyxdg 0.19 (http://freedesktop.org/wiki/Software/pyxdg)
 
 

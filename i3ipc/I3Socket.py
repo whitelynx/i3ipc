@@ -1,7 +1,11 @@
 from os import environ
-from xdg.BaseDirectory import xdg_config_dirs
 from os.path import expanduser, expandvars, normpath
 import json, threading, struct, socket
+
+try:
+    from xdg.BaseDirectory import xdg_config_dirs
+except ImportError:
+    xdg_config_dirs = []
 
 
 I3_IPCFILE = environ['I3SOCK'] if 'I3SOCK' in environ\
