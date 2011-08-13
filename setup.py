@@ -8,6 +8,6 @@ setup(name='i3ipc',
     author='Nathan Middleton',
     author_email='nathan.middleton@gmail.com',
     url='https://github.com/thepub/i3ipc',
-    packages=['i3ipc'],
+    packages=['i3ipc', 'i3ipc.I3Bar', 'i3ipc.I3Bar.modules'],
     scripts=['bin/i3ipc','bin/i3wsbar',],
     )
