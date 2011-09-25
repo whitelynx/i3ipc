@@ -7,8 +7,18 @@ try:
 except ImportError:
     xdg_config_dirs = []
 
+try:
+    import xcb
+    import xcb.xproto
+    from util import socket_path_from_x11
+
+    xcb_socket_path = socket_path_from_x11()
+except ImportError:
+    xcb_socket_path = None
+
 
 I3_IPCFILE = environ['I3SOCK'] if 'I3SOCK' in environ\
+             else xcb_socket_path if xcb_socket_path\
              else '{}/i3/ipc.sock'.format(xdg_config_dirs[0]) if len(xdg_config_dirs) > 0\
              else '~/.config/i3/ipc.sock'
 I3_IPC_MAGIC = 'i3-ipc'
