@@ -71,6 +71,8 @@ class I3Socket(object):
         self.__socket.connect(expanduser(expandvars(normpath(self.__ipcfile))))
         self.__buffer = ''
         self.__event = False
+        self.__fmt_header = '<{}sII'.format(len(I3_IPC_MAGIC))
+        self.__fmt_header_size = struct.calcsize(self.__fmt_header)
 
     def send(self, mtype, payload=''):
         """ Format a payload based on mtype (message type) to the window manager. """
@@ -113,8 +115,9 @@ class I3Socket(object):
         while waiting_for_data:
             try:
                 data = self.__socket.recv(self.__chunk_size)
-                expected_length = int(struct.unpack('l', data[6:10])[0]) + 14
-                while len(data) < expected_length:
+                msg_magic, msg_length, msg_type = self.unpack_header(data)
+                msg_size = self.__fmt_header_size + msg_length
+                while len(data) < msg_size:
                     data = '%s%s' % (data, self.__socket.recv(self.__chunk_size),)
                 return '{}{}'.format(self.__buffer, data) if len(self.__buffer) > 0 else data
             except socket.timeout:
@@ -127,19 +130,24 @@ class I3Socket(object):
                              struct.pack('l', message_type),
                              payload)
 
+    def unpack_header(self, data):
+        """Unpack response headers from the i3 window manager.
+
+        Returns (msg_magic, msg_length, msg_type)
+
+        """
+        return struct.unpack(self.__fmt_header, data[:self.__fmt_header_size])
+
     def unpack(self, data):
         """ Unpack responses from the i3 window manager. """
-        fmt_header = '<{}sII'.format(len(I3_IPC_MAGIC))
-        fmt_header_size = struct.calcsize(fmt_header)
-        msg_magic, msg_length, msg_type = struct.unpack(fmt_header, data[:fmt_header_size])
-
+        msg_magic, msg_length, msg_type = self.unpack_header(data)
         data_size = len(data)
-        msg_size = fmt_header_size + msg_length
+        msg_size = self.__fmt_header_size + msg_length
         if data_size < msg_size:
             self.__buffer = data
             raise BufferError("Incomplete message in buffer.")
         elif data_size == msg_size or data_size > msg_size:
-            msg_payload = json.loads(data[fmt_header_size:msg_size])
+            msg_payload = json.loads(data[self.__fmt_header_size:msg_size])
             self.__buffer = data[msg_size:]
         else:
             raise Exception('Something strange is going on with the data length.')
