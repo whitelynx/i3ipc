@@ -35,7 +35,7 @@ class I3EventListener(threading.Thread):
         self.__subscribed = True
 
         while self.__subscribed:
-            data = self.__evsocket.recieve()
+            data = self.__evsocket.receive()
             while data and self.__subscribed:
                 response = self.__evsocket.unpack(data)
                 if response and response['type'] in I3_IPC_EVENTS:
@@ -44,7 +44,7 @@ class I3EventListener(threading.Thread):
                                                     else self.__elsocket.get_workspaces() if self.__event_type == I3_IPC_EVENT_WORKSPACE\
                                                     else None
                         self.__callback(self, response)
-                data = self.__evsocket.recieve()
+                data = self.__evsocket.receive()
 
         self.__evsocket.close()
         self.__elsocket.close()

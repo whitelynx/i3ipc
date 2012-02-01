@@ -80,7 +80,7 @@ class I3Socket(object):
             raise TypeError('Mesage type ({}) does not exit.'.format(mtype))
         message = self.pack(mtype, payload)
         self.__socket.sendall(message)
-        data = self.recieve()
+        data = self.receive()
         return self.unpack(data)
 
     def send_command(self, payload):
@@ -109,7 +109,7 @@ class I3Socket(object):
             raise EventError("Invalid event type.")
         return self.send(I3_IPC_MESSAGE_TYPE_SUBSCRIBE, payload)
 
-    def recieve(self):
+    def receive(self):
         """ Recieve data from the socket. """
         waiting_for_data = True
         while waiting_for_data:
