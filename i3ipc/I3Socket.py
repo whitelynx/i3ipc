@@ -61,6 +61,7 @@ I3_IPC_ALL_REPLIES = (I3_IPC_REPLY_TYPE_COMMAND,
 class MagicKeyError(Exception): pass
 class TypeError(Exception): pass
 class BufferError(Exception): pass
+class EventError(Exception): pass
 
 class I3Socket(object):
     def __init__(self, ipcfile=None, timeout=I3_SOCKET_TIMEOUT, chunk_size=I3_CHUNK_SIZE):

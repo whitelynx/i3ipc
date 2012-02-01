@@ -7,8 +7,6 @@ from I3Socket import I3Socket,\
                      I3_IPC_EVENT_WORKSPACE
 
 
-class EventError(Exception): pass
-
 class I3EventListener(threading.Thread):
     """ Self-starting thread to listen for a single window manager event.
 
