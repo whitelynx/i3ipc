@@ -14,6 +14,7 @@ Dependencies (tested, may work with others):
 
 Optional Dependencies:
  * pyxdg 0.19 (http://freedesktop.org/wiki/Software/pyxdg)
+ * xpyb 1.2 (http://cgit.freedesktop.org/xcb/xpyb/)
 
 
 Events:
