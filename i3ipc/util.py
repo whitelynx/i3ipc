@@ -1,14 +1,16 @@
 try:
-  import xcb
-  import xcb.xproto
+    import xcb
+    import xcb.xproto
 except ImportError:
-  pass
+    pass
+
 
 def unpack_prop_reply_value(prop_reply):
     '''unpack_prop_reply_value:
         This is broken out because it probably won't work in all cases.
     '''
     return str(prop_reply.value.buf())
+
 
 def socket_path_from_x11():
     '''socket_path_from_x11:
@@ -36,7 +38,7 @@ def socket_path_from_x11():
         return None
 
     prop_cookie = conn.core.GetPropertyUnchecked(False, root, atom_reply.atom,
-                                                 xcb.xproto.GetPropertyType.Any, 0, PATH_MAX)
+            xcb.xproto.GetPropertyType.Any, 0, PATH_MAX)
     prop_reply = prop_cookie.reply()
 
     if not prop_reply: # I don't know if ...cookie.reply() will ever be None, but if it is I'll be ready
