@@ -1,6 +1,10 @@
 import os
 
 
+I3_SOCK_ENV_VAR = 'I3SOCK'
+I3_SOCK_X_ATOM = 'I3_SOCKET_PATH'
+
+
 def get():
     for source in (from_env, from_x11, from_xdg, default):
         path = source()
@@ -11,25 +15,37 @@ def get():
 
 
 def from_env():
-    if 'I3SOCK' in os.environ and os.path.exists(os.environ['I3SOCK']):
-        return os.environ['I3SOCK']
+    env_path = os.environ.get(I3_SOCK_ENV_VAR, None)
+    if env_path is not None and os.path.exists(env_path):
+        return env_path
 
 
 def from_x11():
-    '''Gets the I3 socket path through X11.
+    """Gets the I3 socket path through X11.
 
-    '''
+    """
     return from_xpyb() or from_python_xlib()
 
 
 def from_python_xlib():
-    '''Gets the I3 socket path using python-xlib.
+    """Gets the I3 socket path using python-xlib.
 
-    '''
+    """
+    try:
+        from Xlib.display import Display
+    except ImportError:
+        return None
+
+    display = Display(os.environ.get('DISPLAY', ':0.0'))
+    screen = display.screen()
+    atom = display.intern_atom(I3_SOCK_X_ATOM, True)
+    utf8_string = display.intern_atom('UTF8_STRING', True)
+    response = screen.root.get_full_property(atom, utf8_string)
+    return response.value
 
 
 def from_xpyb():
-    """Gets the I3 socket path using xcb/xpyb.
+    """Gets the I3 socket path using xpyb.
 
     I tried to keep this as close to the actual implementation as possible.
 
@@ -54,7 +70,7 @@ def from_xpyb():
     root_screen = screens[conn.pref_screen]
     root = root_screen.root
 
-    atom_cookie = conn.core.InternAtom(0, len("I3_SOCKET_PATH"), "I3_SOCKET_PATH")
+    atom_cookie = conn.core.InternAtom(0, len(I3_SOCK_X_ATOM), I3_SOCK_X_ATOM)
     atom_reply = atom_cookie.reply()
     if not atom_reply:  # I don't know if ...cookie.reply() will ever be None, but if it is I'll be ready
         return None
@@ -75,9 +91,9 @@ def from_xpyb():
 
 
 def xcb_unpack_prop_reply_value(prop_reply):
-    '''This is broken out because it probably won't work in all cases.
+    """This is broken out because it probably won't work in all cases.
 
-    '''
+    """
     return str(prop_reply.value.buf())
 
 
