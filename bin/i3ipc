@@ -19,10 +19,9 @@ from optparse import OptionParser
 import i3ipc
 from i3ipc import I3Socket, I3EventListener
 from time import sleep
-from os import environ
 
 parser = OptionParser()
-parser.add_option("-i", "--socket", dest="ipcfile", help="Set IPC socket location.")
+parser.add_option("-i", "--socket", dest="ipcfile", help="Set IPC socket location.", default=None)
 parser.add_option("-s", "--send", dest="command", help="Send command to window manager.")
 parser.add_option("-S", "--subscribe", dest="subscription", help="Print specified window manager events to STDOUT.")
 parser.add_option("-W", "--get-workspace", dest="workspace", help="Get a named or indexed workspace information.")
@@ -30,9 +29,8 @@ parser.add_option("-w", "--get-workspaces", dest="workspaces", action="store_tru
 parser.add_option("-o", "--get-outputs", dest="outputs", action="store_true", help="Get available RandR outputs.")
 (options, args) = parser.parse_args()
 
-if __name__ == '__main__':
-    ipcfile = options.ipcfile if options.ipcfile else None
 
+if __name__ == '__main__':
     if options.subscription:
         def listener(caller, data):
             print(data['event_payload'])
@@ -45,7 +43,7 @@ if __name__ == '__main__':
             event_type = getattr(i3ipc, options.subscription)
             event_other = ''
 
-        event = I3EventListener(listener, event_type, event_other, ipcfile)
+        event = I3EventListener(listener, event_type, event_other, options.ipcfile)
         try:
             while event.is_alive():
                 sleep(1)
@@ -53,7 +51,7 @@ if __name__ == '__main__':
             event.unsubscribe()
 
     else:
-        socket = I3Socket(ipcfile)
+        socket = I3Socket(options.ipcfile)
 
         if options.command:
             print(socket.send_command(options.command)['payload'])
