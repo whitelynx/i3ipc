@@ -6,10 +6,13 @@ I3_SOCK_X_ATOM = 'I3_SOCKET_PATH'
 
 
 def get():
+    """Get the I3 socket path, trying several strategies.
+
+    """
     for source in (from_env, from_x11, from_xdg, default):
         try:
             path = source()
-            if path is not None:
+            if path is not None and os.path.exists(path):
                 return path
         except:
             pass
@@ -18,20 +21,21 @@ def get():
 
 
 def from_env():
-    env_path = os.environ.get(I3_SOCK_ENV_VAR, None)
-    if env_path is not None and os.path.exists(env_path):
-        return env_path
+    """Get the I3 socket path from an environment variable.
+
+    """
+    return os.environ.get(I3_SOCK_ENV_VAR, None)
 
 
 def from_x11():
-    """Gets the I3 socket path through X11.
+    """Get the I3 socket path through X11.
 
     """
     return from_xpyb() or from_python_xlib()
 
 
 def from_python_xlib():
-    """Gets the I3 socket path using python-xlib.
+    """Get the I3 socket path using python-xlib.
 
     """
     try:
@@ -48,7 +52,7 @@ def from_python_xlib():
 
 
 def from_xpyb():
-    """Gets the I3 socket path using xpyb.
+    """Get the I3 socket path using xpyb.
 
     I tried to keep this as close to the actual implementation as possible.
 
@@ -71,10 +75,7 @@ def from_xpyb():
     prop_cookie = conn.core.GetPropertyUnchecked(False, root, atom, xcb.xproto.GetPropertyType.Any, 0, PATH_MAX)
     prop_reply = prop_cookie.reply()
 
-    socket_path = xcb_unpack_prop_reply_value(prop_reply)
-
-    if os.path.exists(socket_path):
-        return socket_path
+    return xcb_unpack_prop_reply_value(prop_reply)
 
 
 def xcb_unpack_prop_reply_value(prop_reply):
@@ -85,6 +86,9 @@ def xcb_unpack_prop_reply_value(prop_reply):
 
 
 def from_xdg():
+    """Get the I3 socket path from an environment variable.
+
+    """
     try:
         from xdg.BaseDirectory import xdg_config_dirs
     except ImportError:
@@ -97,6 +101,7 @@ def from_xdg():
 
 
 def default():
-    defaultPath = '~/.config/i3/ipc.sock'
-    if os.path.exists(defaultPath):
-        return defaultPath
+    """Get the default I3 socket path.
+
+    """
+    return '~/.config/i3/ipc.sock'
