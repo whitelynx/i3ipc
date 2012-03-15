@@ -12,10 +12,10 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 """
-from .util import SocketPath
+from . import i3path
 
 
-I3_IPCFILE = SocketPath.get()
+I3_IPCFILE = i3path.get()
 
 I3_IPC_MAGIC = 'i3-ipc'
 I3_CHUNK_SIZE = 1024
