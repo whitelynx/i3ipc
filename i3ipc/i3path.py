@@ -7,9 +7,12 @@ I3_SOCK_X_ATOM = 'I3_SOCKET_PATH'
 
 def get():
     for source in (from_env, from_x11, from_xdg, default):
-        path = source()
-        if path is not None:
-            return path
+        try:
+            path = source()
+            if path is not None:
+                return path
+        except:
+            pass
 
     raise RuntimeError("Couldn't find i3 IPC socket path!")
 
