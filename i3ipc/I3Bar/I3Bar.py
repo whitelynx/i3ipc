@@ -1,14 +1,15 @@
-import subprocess, select
-from sys import stdin
+import subprocess
 from i3ipc import subscribe, I3Socket, I3_IPCFILE, I3_IPC_EVENT_WORKSPACE
+
 
 class I3Bar(object):
     FMT_BAR = "^p(_LEFT) {}^p(_RIGHT) \n"
     FMT_BTN = "^bg({})^ca(1,i3ipc -s {})[ {} ]^ca()"
 
     def __init__(self, dzen=None, font=None, ipcfile=I3_IPCFILE):
-        dzen_args = [dzen,'-dock']
-        if font: dzen_args.append('-fn {}'.format(font))
+        dzen_args = [dzen, '-dock']
+        if font:
+            dzen_args.append('-fn {}'.format(font))
         self.dzen = subprocess.Popen(dzen_args, stdin=subprocess.PIPE)
         self.ipcfile = ipcfile
         self.barfmt = I3Bar.FMT_BAR
@@ -51,4 +52,3 @@ class I3Bar(object):
     def close(self, *args):
         self.i3ev.unsubscribe()
         self.dzen.kill()
-

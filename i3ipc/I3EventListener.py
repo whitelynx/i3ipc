@@ -1,5 +1,5 @@
 import threading
-from I3Socket import I3Socket,\
+from .I3Socket import I3Socket,\
                      I3_SOCKET_TIMEOUT,\
                      I3_IPCFILE,\
                      I3_IPC_EVENTS,\

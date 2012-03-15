@@ -12,7 +12,6 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from I3Socket import *
-from I3EventListener import I3EventListener,\
-                            subscribe
-import I3Bar
+from .I3Socket import *
+from .I3EventListener import I3EventListener, subscribe
+from . import I3Bar
