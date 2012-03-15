@@ -59,33 +59,17 @@ def from_xpyb():
     except ImportError:
         return None
 
-    PATH_MAX = 4096
-    try:
-        conn = xcb.connect()
-    except:
-        return None
-    if conn == None:
-        return None
+    conn = xcb.connect()
 
     setup = conn.get_setup()
-
-    screens = setup.roots
-    root_screen = screens[conn.pref_screen]
-    root = root_screen.root
+    root = setup.roots[conn.pref_screen].root
 
     atom_cookie = conn.core.InternAtom(0, len(I3_SOCK_X_ATOM), I3_SOCK_X_ATOM)
-    atom_reply = atom_cookie.reply()
-    if not atom_reply:  # I don't know if ...cookie.reply() will ever be None, but if it is I'll be ready
-        return None
+    atom = atom_cookie.reply().atom
 
-    prop_cookie = conn.core.GetPropertyUnchecked(False, root, atom_reply.atom,
-            xcb.xproto.GetPropertyType.Any, 0, PATH_MAX)
+    PATH_MAX = 4096
+    prop_cookie = conn.core.GetPropertyUnchecked(False, root, atom, xcb.xproto.GetPropertyType.Any, 0, PATH_MAX)
     prop_reply = prop_cookie.reply()
-
-    if not prop_reply:  # I don't know if ...cookie.reply() will ever be None, but if it is I'll be ready
-        return None
-    if not prop_reply.value_len:
-        return None
 
     socket_path = xcb_unpack_prop_reply_value(prop_reply)
 
