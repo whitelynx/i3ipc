@@ -15,3 +15,4 @@ with this program.  If not, see <http://www.gnu.org/licenses/>.
 from .I3Socket import *
 from .I3EventListener import I3EventListener, subscribe
 from . import I3Bar
+from .i3ipc import Events

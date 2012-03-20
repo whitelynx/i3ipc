@@ -37,10 +37,10 @@ if __name__ == '__main__':
 
         if ',' in options.subscription:
             subscriptions = options.subscription.split(',')
-            event_type = getattr(i3ipc, subscriptions[0])
+            event_type = getattr(i3ipc.Events, subscriptions[0])
             event_other = subscriptions[1] if len(subscriptions) > 1 else ''
         else:
-            event_type = getattr(i3ipc, options.subscription)
+            event_type = getattr(i3ipc.Events, options.subscription)
             event_other = ''
 
         event = I3EventListener(listener, event_type, event_other, options.ipcfile)

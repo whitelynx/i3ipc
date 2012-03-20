@@ -53,6 +53,11 @@ I3_IPC_ALL_REPLIES = (I3_IPC_REPLY_TYPE_COMMAND,
         I3_IPC_EVENT_OUTPUT,)
 
 
+class Events(object):
+    workspace = I3_IPC_EVENT_WORKSPACE
+    output = I3_IPC_EVENT_OUTPUT
+
+
 class MagicKeyError(Exception):
     pass
 
