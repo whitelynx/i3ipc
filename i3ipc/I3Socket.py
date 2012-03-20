@@ -3,10 +3,8 @@ import json
 import struct
 import socket
 
-from .i3ipc import (I3_IPCFILE, I3_IPC_MAGIC, I3_CHUNK_SIZE, I3_SOCKET_TIMEOUT, I3_IPC_MESSAGE_TYPE_COMMAND,
-        I3_IPC_MESSAGE_TYPE_GET_WORKSPACES, I3_IPC_MESSAGE_TYPE_SUBSCRIBE, I3_IPC_MESSAGE_TYPE_GET_OUTPUTS,
-        I3_IPC_EVENT_WORKSPACE, I3_IPC_EVENT_OUTPUT, I3_IPC_MESSAGES, I3_IPC_EVENTS, I3_IPC_ALL_REPLIES, MagicKeyError,
-        EventError)
+from .i3ipc import (I3_IPCFILE, I3_IPC_MAGIC, I3_CHUNK_SIZE, I3_SOCKET_TIMEOUT, Messages, Events, all_replies,
+        MagicKeyError, EventError)
 
 
 class I3Socket(object):
@@ -23,7 +21,7 @@ class I3Socket(object):
 
     def send(self, mtype, payload=''):
         """ Format a payload based on mtype (message type) to the window manager. """
-        if mtype not in I3_IPC_MESSAGES:
+        if mtype not in Messages.all():
             raise TypeError('Mesage type ({}) does not exit.'.format(mtype))
         message = self.pack(mtype, payload)
         print(repr(message))
@@ -32,26 +30,50 @@ class I3Socket(object):
         return self.unpack(data)
 
     def send_command(self, payload):
-        """ Send a command to window manager. """
-        return self.send(I3_IPC_MESSAGE_TYPE_COMMAND, payload)
+        """Send a command to window manager.
+
+        """
+        return self.send(Messages.COMMAND, payload)
 
     def get_workspaces(self):
-        """ Return a list of workspaces. """
-        return self.send(I3_IPC_MESSAGE_TYPE_GET_WORKSPACES)
+        """Return a list of workspaces.
+
+        """
+        return self.send(Messages.GET_WORKSPACES)
 
     def get_outputs(self):
-        """ Returns a list of of available outpus. """
-        return self.send(I3_IPC_MESSAGE_TYPE_GET_OUTPUTS)
+        """Returns a list of of available outpus.
+
+        """
+        return self.send(Messages.GET_OUTPUTS)
+
+    def get_tree(self):
+        """Return a list of trees.
+
+        """
+        return self.send(Messages.GET_TREE)
+
+    def get_marks(self):
+        """Return a list of marks.
+
+        """
+        return self.send(Messages.GET_MARKS)
+
+    def get_bar_config(self):
+        """Return a list of bar configurations.
+
+        """
+        return self.send(Messages.GET_BAR_CONFIG)
 
     def subscribe(self, event_type, event_other=''):
         """Subscribe to an event over this socket. Used by I3EventListener.
 
         """
-        if event_type in I3_IPC_EVENTS:
+        if event_type in Events.all():
             self.__event = True
             event = (
-                    ['output'] if event_type == I3_IPC_EVENT_OUTPUT
-                    else ['workspace'] if event_type == I3_IPC_EVENT_WORKSPACE
+                    ['output'] if event_type == Events.OUTPUT
+                    else ['workspace'] if event_type == Events.WORKSPACE
                     else []
                     )
             if event_other:
@@ -61,7 +83,7 @@ class I3Socket(object):
         else:
             raise EventError("Invalid event type.")
 
-        return self.send(I3_IPC_MESSAGE_TYPE_SUBSCRIBE, payload)
+        return self.send(Messages.SUBSCRIBE, payload)
 
     def receive(self):
         """ Recieve data from the socket. """
@@ -120,7 +142,7 @@ class I3Socket(object):
 
         if response['magic'] != I3_IPC_MAGIC:
             raise MagicKeyError('Invalid key ({}).'.format(response['magic']))
-        if response['type'] not in I3_IPC_ALL_REPLIES:
+        if response['type'] not in all_replies:
             raise TypeError('Invalid reply type. ({})'.format(response['type']))
         return response
 

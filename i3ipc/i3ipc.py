@@ -21,41 +21,40 @@ I3_IPC_MAGIC = 'i3-ipc'
 I3_CHUNK_SIZE = 1024
 I3_SOCKET_TIMEOUT = 0.5
 
-I3_IPC_MESSAGE_TYPE_COMMAND = 0
-I3_IPC_MESSAGE_TYPE_GET_WORKSPACES = 1
-I3_IPC_MESSAGE_TYPE_SUBSCRIBE = 2
-I3_IPC_MESSAGE_TYPE_GET_OUTPUTS = 3
 
-I3_IPC_REPLY_TYPE_COMMAND = 0
-I3_IPC_REPLY_TYPE_WORKSPACES = 1
-I3_IPC_REPLY_TYPE_SUBSCRIBE = 2
-I3_IPC_REPLY_TYPE_OUTPUTS = 3
+class Messages(object):
+    COMMAND = 0
+    GET_WORKSPACES = 1
+    SUBSCRIBE = 2
+    GET_OUTPUTS = 3
+    GET_TREE = 4
+    GET_MARKS = 5
+    GET_BAR_CONFIG = 6
 
-I3_IPC_EVENT_MASK = 1 << 31
-I3_IPC_EVENT_WORKSPACE = I3_IPC_EVENT_MASK | 0
-I3_IPC_EVENT_OUTPUT = I3_IPC_EVENT_MASK | 1
-
-I3_IPC_MESSAGES = (I3_IPC_MESSAGE_TYPE_COMMAND,
-        I3_IPC_MESSAGE_TYPE_GET_WORKSPACES,
-        I3_IPC_MESSAGE_TYPE_SUBSCRIBE,
-        I3_IPC_MESSAGE_TYPE_GET_OUTPUTS,)
-I3_IPC_REPLIES = (I3_IPC_REPLY_TYPE_COMMAND,
-        I3_IPC_REPLY_TYPE_WORKSPACES,
-        I3_IPC_REPLY_TYPE_SUBSCRIBE,
-        I3_IPC_REPLY_TYPE_OUTPUTS,)
-I3_IPC_EVENTS = (I3_IPC_EVENT_WORKSPACE,
-        I3_IPC_EVENT_OUTPUT,)
-I3_IPC_ALL_REPLIES = (I3_IPC_REPLY_TYPE_COMMAND,
-        I3_IPC_REPLY_TYPE_WORKSPACES,
-        I3_IPC_REPLY_TYPE_SUBSCRIBE,
-        I3_IPC_REPLY_TYPE_OUTPUTS,
-        I3_IPC_EVENT_WORKSPACE,
-        I3_IPC_EVENT_OUTPUT,)
+    @classmethod
+    def all(cls):
+        return tuple(
+                getattr(cls, name)
+                for name in dir(cls)
+                if name.isupper() and not name.startswith('_')
+                )
 
 
 class Events(object):
-    workspace = I3_IPC_EVENT_WORKSPACE
-    output = I3_IPC_EVENT_OUTPUT
+    _MASK = 1 << 31
+    WORKSPACE = _MASK | 0
+    OUTPUT = _MASK | 1
+
+    @classmethod
+    def all(cls):
+        return tuple(
+                getattr(cls, name)
+                for name in dir(cls)
+                if name.isupper() and not name.startswith('_')
+                )
+
+
+all_replies = Messages.all() + Events.all()
 
 
 class MagicKeyError(Exception):

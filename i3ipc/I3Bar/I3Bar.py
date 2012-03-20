@@ -1,5 +1,5 @@
 import subprocess
-from i3ipc import subscribe, I3Socket, I3_IPCFILE, I3_IPC_EVENT_WORKSPACE
+from i3ipc import subscribe, I3Socket, I3_IPCFILE, Events
 
 
 class I3Bar(object):
@@ -45,7 +45,7 @@ class I3Bar(object):
         pass
 
     def loop(self):
-        self.i3ev = subscribe(self.listener, I3_IPC_EVENT_WORKSPACE)
+        self.i3ev = subscribe(self.listener, Events.WORKSPACE)
         while self.i3ev.is_alive():
             pass
 

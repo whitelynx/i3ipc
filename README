@@ -2,11 +2,11 @@ i3ipc - An Library for i3 IPC Communication
 
 
 Current Status:
-    * Send commands by IPC to i3 window manager.
-    * Recieve parsed JSON responses from sent commands.
-    * Subscribe to i3 events using an evented model.
-    * Works with i3 window manager up through next branch in git. (not tested
-      with tree)
+  * Send commands by IPC to i3 window manager.
+  * Recieve parsed JSON responses from sent commands.
+  * Subscribe to i3 events using an evented model.
+  * Works with i3 window manager version 4.1.2; may work with other 4.x
+    versions, but will probably be missing functionality on older versions.
       
       
 Dependencies (tested, may work with others):
@@ -26,17 +26,17 @@ Events:
  According to http://i3.zekjur.net/docs/ipc.html the following events can be
  filtered with these arguments:
 
- I3_IPC_EVENT_WORKSPACE Event:
+ WORKSPACE Event:
     focus
     init
     empty
     urgent
 
- I3_IPC_EVENT_OUTPUT Event:
+ OUTPUT Event:
     unspecified
 
  A comma-seperated list of options can be passed in to the i3ipc program;
- i3ipc -S I3_IPC_EVENT_WORKSPACE,init
+ i3ipc -S WORKSPACE,init
 
 
 Comments:

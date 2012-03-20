@@ -1,10 +1,5 @@
 import threading
-from .I3Socket import I3Socket,\
-                     I3_SOCKET_TIMEOUT,\
-                     I3_IPCFILE,\
-                     I3_IPC_EVENTS,\
-                     I3_IPC_EVENT_OUTPUT,\
-                     I3_IPC_EVENT_WORKSPACE
+from .I3Socket import I3Socket, I3_SOCKET_TIMEOUT, I3_IPCFILE, Events
 
 
 class I3EventListener(threading.Thread):
@@ -36,10 +31,10 @@ class I3EventListener(threading.Thread):
             data = self.__evsocket.receive()
             while data and self.__subscribed:
                 response = self.__evsocket.unpack(data)
-                if response and response['type'] in I3_IPC_EVENTS:
+                if response and response['type'] in Events.all():
                     if response['payload']['change'] == self.__event_filter or not self.__event_filter:
-                        response['event_payload'] = self.__elsocket.get_outputs() if self.__event_type == I3_IPC_EVENT_OUTPUT\
-                                                    else self.__elsocket.get_workspaces() if self.__event_type == I3_IPC_EVENT_WORKSPACE\
+                        response['event_payload'] = self.__elsocket.get_outputs() if self.__event_type == Events.OUTPUT\
+                                                    else self.__elsocket.get_workspaces() if self.__event_type == Events.WORKSPACE\
                                                     else None
                         self.__callback(self, response)
                 data = self.__evsocket.receive()
