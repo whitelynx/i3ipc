@@ -103,7 +103,7 @@ def from_xdg():
 
 def from_i3():
     try:
-        return subprocess.check_output(["i3", "--get-socketpath"])
+        return subprocess.check_output(["i3", "--get-socketpath"]).strip()
     except subprocess.CalledProcessError:
         return
 
