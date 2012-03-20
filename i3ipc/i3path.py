@@ -1,4 +1,5 @@
 import os
+import subprocess
 
 
 I3_SOCK_ENV_VAR = 'I3SOCK'
@@ -9,7 +10,7 @@ def get():
     """Get the I3 socket path, trying several strategies.
 
     """
-    for source in (from_env, from_x11, from_xdg, default):
+    for source in (from_env, from_x11, from_xdg, from_i3, default):
         try:
             path = source()
             if path is not None and os.path.exists(path):
@@ -98,6 +99,13 @@ def from_xdg():
         path = '{}/i3/ipc.sock'.format(configDir)
         if os.path.exists(path):
             return path
+
+
+def from_i3():
+    try:
+        return subprocess.check_output(["i3", "--get-socketpath"])
+    except subprocess.CalledProcessError:
+        return
 
 
 def default():
