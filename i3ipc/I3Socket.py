@@ -24,7 +24,6 @@ class I3Socket(object):
         if mtype not in Messages.all():
             raise TypeError('Mesage type ({}) does not exit.'.format(mtype))
         message = self.pack(mtype, payload)
-        print(repr(message))
         self.__socket.sendall(message)
         data = self.receive()
         return self.unpack(data)
