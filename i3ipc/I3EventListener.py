@@ -29,14 +29,21 @@ class I3EventListener(threading.Thread):
 
         while self.__subscribed:
             data = self.__evsocket.receive()
+
             while data and self.__subscribed:
                 response = self.__evsocket.unpack(data)
+
                 if response and response['type'] in Events.all():
                     if response['payload']['change'] == self.__event_filter or not self.__event_filter:
-                        response['event_payload'] = self.__elsocket.get_outputs() if self.__event_type == Events.OUTPUT\
-                                                    else self.__elsocket.get_workspaces() if self.__event_type == Events.WORKSPACE\
-                                                    else None
+                        payload = None
+                        if self.__event_type == Events.OUTPUT:
+                            payload = self.__elsocket.get_outputs()
+                        elif self.__event_type == Events.WORKSPACE:
+                            payload = self.__elsocket.get_workspaces()
+
+                        response['event_payload'] = payload
                         self.__callback(self, response)
+
                 data = self.__evsocket.receive()
 
         self.__evsocket.close()
